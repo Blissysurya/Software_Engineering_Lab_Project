@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -58,7 +58,9 @@
   }
 
   body {
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
     @apply bg-background text-foreground antialiased;
     background-image:
       radial-gradient(ellipse 80% 50% at 50% -10%,
@@ -68,7 +70,7 @@
   }
 
   h1, h2, h3 {
-    font-family: 'Playfair Display', Georgia, serif;
+    @apply tracking-tight;
   }
 
   ::selection {
@@ -262,7 +264,7 @@
   animation: btn-shimmer 2.5s linear infinite;
 }
 
-/* Focus-ring input variant */
+/* Legacy auth input (kept for backward compat) */
 .auth-input {
   @apply w-full h-12 px-4 bg-white border-2 border-border rounded-xl text-sm
          text-foreground placeholder:text-muted-foreground/60
@@ -272,9 +274,30 @@
 }
 .auth-input.has-icon { @apply pl-11; }
 
+/* Clean auth input for white-panel pages */
+.auth-input-clean {
+  @apply w-full h-12 px-4 bg-gray-50 border-2 border-gray-100 rounded-xl text-sm
+         text-gray-900 placeholder:text-gray-400
+         transition-all duration-200 outline-none
+         focus:bg-white focus:border-[hsl(var(--buffalo-sauce))]
+         focus:shadow-[0_0_0_4px_hsl(var(--buffalo-sauce)/0.1)];
+}
+.auth-input-clean.has-icon { @apply pl-11; }
+
 @layer utilities {
   .font-display {
-    font-family: 'Playfair Display', Georgia, serif;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  /* Hide scrollbar across all browsers */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
   .text-chicory  { color: hsl(var(--red-chicory)); }
   .text-mustard  { color: hsl(var(--mustard-oil)); }

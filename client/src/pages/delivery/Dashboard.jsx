@@ -172,7 +172,7 @@ export default function DeliveryDashboard() {
                   className="btn-primary text-xs h-9 px-4 gap-1.5 w-full sm:w-auto"
                 >
                   <Truck size={13} strokeWidth={2} />
-                  {acting === o._id ? 'Assigning…' : 'Pick Up This Order'}
+                  {acting === o._id ? 'Confirming…' : 'Confirm Pickup'}
                 </button>
               </div>
             ))}

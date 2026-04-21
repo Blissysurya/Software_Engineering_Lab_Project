@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import Navbar from './components/Navbar';
@@ -36,9 +36,11 @@ function RoleHome() {
 }
 
 function AppRoutes() {
+  const { pathname } = useLocation();
+  const isAuthPage = pathname === '/login' || pathname === '/register';
   return (
-    <div className="min-h-screen">
-      <Navbar />
+    <div className={isAuthPage ? '' : 'min-h-screen'}>
+      {!isAuthPage && <Navbar />}
       <Routes>
         <Route path="/" element={<RoleHome />} />
         <Route path="/login" element={<Login />} />

@@ -32,6 +32,15 @@ export default function OrderQueue() {
     setActing(null);
   };
 
+  const markPickupCollected = async orderId => {
+    setActing(orderId);
+    try {
+      await api.patch(`/orders/${orderId}/pickup-collected`);
+      if (shop) fetchOrders(shop._id);
+    } catch {}
+    setActing(null);
+  };
+
   const STATUS_COLORS = {
     accepted: 'bg-blue-100 text-blue-800',
     preparing: 'bg-purple-100 text-purple-800',
@@ -65,7 +74,15 @@ export default function OrderQueue() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="font-bold text-gray-700">₹{o.totalAmount} · <span className="capitalize font-normal">{o.deliveryType}</span></span>
-                {NEXT_STATUS[o.status] && (
+                {o.deliveryType === 'pickup' && o.status === 'ready' ? (
+                  <button
+                    onClick={() => markPickupCollected(o._id)}
+                    disabled={acting === o._id}
+                    className="btn-success text-sm"
+                  >
+                    {acting === o._id ? '…' : 'Mark Picked Up'}
+                  </button>
+                ) : NEXT_STATUS[o.status] ? (
                   <button
                     onClick={() => advance(o._id, NEXT_STATUS[o.status])}
                     disabled={acting === o._id}
@@ -73,7 +90,7 @@ export default function OrderQueue() {
                   >
                     {acting === o._id ? '…' : NEXT_LABEL[o.status]}
                   </button>
-                )}
+                ) : null}
                 {o.status === 'ready' && (
                   <span className="text-green-600 font-medium text-sm">Ready for {o.deliveryType === 'pickup' ? 'Pickup' : 'Delivery'}</span>
                 )}

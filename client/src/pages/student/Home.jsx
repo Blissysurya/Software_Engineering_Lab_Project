@@ -83,7 +83,7 @@ export default function StudentHome() {
           <p className="hero-sub text-[hsl(var(--mustard-oil))] text-sm font-semibold uppercase tracking-widest mb-3 opacity-0">
             Campus Food Delivery
           </p>
-          <h1 className="hero-title font-display text-4xl sm:text-5xl font-bold text-white leading-tight mb-4 opacity-0">
+          <h1 className="hero-title font-display text-3xl sm:text-4xl font-bold text-white leading-tight mb-4 opacity-0">
             What are you<br />craving today?
           </h1>
           <p className="hero-sub text-white/70 text-sm mb-8 opacity-0">

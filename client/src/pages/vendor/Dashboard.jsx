@@ -37,13 +37,21 @@ export default function VendorDashboard() {
   const navigate = useNavigate();
   const [shop, setShop]       = useState(null);
   const [orders, setOrders]   = useState([]);
+  const [pickupHistory, setPickupHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(false);
 
   useEffect(() => {
     api.get('/shops/my-shop')
-      .then(r => { setShop(r.data); return api.get(`/orders/shop/${r.data._id}`); })
-      .then(r => setOrders(r.data))
+      .then(async r => {
+        setShop(r.data);
+        const [activeRes, historyRes] = await Promise.all([
+          api.get(`/orders/shop/${r.data._id}`),
+          api.get(`/orders/shop/${r.data._id}/pickup-history`),
+        ]);
+        setOrders(activeRes.data);
+        setPickupHistory(historyRes.data);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -54,6 +62,16 @@ export default function VendorDashboard() {
     setToggling(true);
     try { const { data } = await api.patch(`/shops/${shop._id}/toggle-open`); setShop(data); } catch {}
     setToggling(false);
+  };
+
+  const refreshData = async () => {
+    if (!shop) return;
+    const [activeRes, historyRes] = await Promise.all([
+      api.get(`/orders/shop/${shop._id}`),
+      api.get(`/orders/shop/${shop._id}/pickup-history`),
+    ]);
+    setOrders(activeRes.data);
+    setPickupHistory(historyRes.data);
   };
 
   if (loading) return <Spinner />;
@@ -171,6 +189,39 @@ export default function VendorDashboard() {
             </Link>
           );
         })}
+      </div>
+
+      <div className="mt-10" data-reveal>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="section-label mb-1">Pickup History</p>
+            <p className="text-sm text-muted-foreground">Recently collected pickup orders</p>
+          </div>
+          <button onClick={refreshData} className="btn-secondary text-xs h-9 px-3">Refresh</button>
+        </div>
+
+        {pickupHistory.length === 0 ? (
+          <div className="card p-6 text-center text-sm text-muted-foreground">
+            No pickup orders have been collected yet.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {pickupHistory.map(order => (
+              <div key={order._id} className="card p-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-card-foreground">{order.student?.name}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {new Date(order.updatedAt).toLocaleString()}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-[hsl(var(--buffalo-sauce))]">₹{order.totalAmount}</p>
+                  <span className="badge badge-picked_up mt-1">Picked Up</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

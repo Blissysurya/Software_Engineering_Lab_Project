@@ -64,12 +64,45 @@ export const getShopOrders = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+export const getShopPickupHistory = async (req, res, next) => {
+  try {
+    const orders = await Order.find({
+      shop: req.params.shopId,
+      deliveryType: 'pickup',
+      status: 'picked_up',
+    })
+      .populate('student', 'name phone address')
+      .sort('-updatedAt')
+      .limit(10);
+    res.json(orders);
+  } catch (err) { next(err); }
+};
+
 export const updateOrderStatus = async (req, res, next) => {
   try {
     const { status } = req.body;
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
     order.status = status;
+    await order.save();
+    res.json(order);
+  } catch (err) { next(err); }
+};
+
+export const markPickupCollected = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    if (order.deliveryType !== 'pickup') {
+      return res.status(400).json({ message: 'Only pickup orders can be marked as picked up here' });
+    }
+
+    if (order.status !== 'ready') {
+      return res.status(400).json({ message: 'Only ready orders can be marked as picked up' });
+    }
+
+    order.status = 'picked_up';
     await order.save();
     res.json(order);
   } catch (err) { next(err); }

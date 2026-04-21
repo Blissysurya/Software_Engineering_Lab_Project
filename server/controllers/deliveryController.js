@@ -20,10 +20,9 @@ export const assignOrder = async (req, res, next) => {
       _id: req.params.orderId,
       status: 'ready',
       deliveryType: 'delivery',
-      assignedTo: null,
+      assignedTo: req.user._id,
     });
-    if (!order) return res.status(400).json({ message: 'Order not available for pickup' });
-    order.assignedTo = req.user._id;
+    if (!order) return res.status(400).json({ message: 'Order not found or not assigned to you' });
     order.status = 'picked_up';
     await order.save();
     res.json(order);
