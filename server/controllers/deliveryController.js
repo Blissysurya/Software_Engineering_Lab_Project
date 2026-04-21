@@ -5,7 +5,7 @@ export const getAvailable = async (req, res, next) => {
     const orders = await Order.find({
       status: 'ready',
       deliveryType: 'delivery',
-      assignedTo: null,
+      assignedTo: req.user._id,
     })
       .populate('shop', 'name location')
       .populate('student', 'name address phone')
