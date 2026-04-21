@@ -1,30 +1,289 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --radius: 0.75rem;
+
+    /* === CampusEats Palette === */
+    /* Red Chicory  #B5284A  → hsl(345 62% 43%) */
+    /* Mustard Oil  #D4C26B  → hsl(50  55% 63%) */
+    /* Breezy Beige #F5EDD6  → hsl(40  71% 90%) */
+    /* Buffalo Sauce #E8471A → hsl(15  80% 51%) */
+
+    --red-chicory:   345 62% 43%;
+    --mustard-oil:   50  55% 63%;
+    --breezy-beige:  40  71% 90%;
+    --buffalo-sauce: 15  80% 51%;
+
+    /* Semantic tokens */
+    --background:          40  60% 93%;
+    --foreground:          345 55% 20%;
+
+    --card:                0   0% 100%;
+    --card-foreground:     345 40% 22%;
+
+    --popover:             0   0% 100%;
+    --popover-foreground:  345 40% 20%;
+
+    --primary:             var(--buffalo-sauce);
+    --primary-foreground:  40  80% 97%;
+
+    --secondary:           var(--mustard-oil);
+    --secondary-foreground: 345 45% 28%;
+
+    --muted:               40  30% 86%;
+    --muted-foreground:    345 20% 48%;
+
+    --accent:              var(--red-chicory);
+    --accent-foreground:   40  80% 97%;
+
+    --destructive:         0   72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border:              50  28% 82%;
+    --input:               50  28% 78%;
+    --ring:                var(--buffalo-sauce);
+  }
+
+  * {
+    @apply border-border box-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%,
+        hsl(var(--mustard-oil) / 0.25) 0%,
+        transparent 70%);
+    min-height: 100vh;
+  }
+
+  h1, h2, h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  ::selection {
+    background: hsl(var(--mustard-oil) / 0.45);
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--breezy-beige));
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--mustard-oil));
+    border-radius: 3px;
+  }
+}
+
 @layer components {
+  /* ── Buttons ─────────────────────────────────── */
   .btn {
-    @apply px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium
+           text-sm transition-all duration-200 focus:outline-none focus-visible:ring-2
+           focus-visible:ring-ring focus-visible:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-primary {
-    @apply btn bg-orange-600 text-white hover:bg-orange-700 focus:ring-orange-500;
+    @apply btn bg-primary text-primary-foreground shadow-sm
+           hover:brightness-110 active:scale-[0.98];
   }
   .btn-secondary {
-    @apply btn bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-400;
+    @apply btn bg-secondary text-secondary-foreground
+           hover:brightness-95 active:scale-[0.98];
+  }
+  .btn-accent {
+    @apply btn bg-accent text-accent-foreground shadow-sm
+           hover:brightness-110 active:scale-[0.98];
   }
   .btn-danger {
-    @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+    @apply btn bg-destructive text-destructive-foreground
+           hover:opacity-90 active:scale-[0.98];
   }
-  .btn-success {
-    @apply btn bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
+  .btn-ghost {
+    @apply btn bg-transparent hover:bg-muted/50;
   }
+  .btn-outline {
+    @apply btn border border-border bg-transparent hover:bg-muted/40;
+  }
+
+  /* ── Inputs ──────────────────────────────────── */
   .input {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent;
+    @apply w-full px-3 py-2.5 text-sm border border-input bg-card rounded-lg
+           placeholder:text-muted-foreground
+           focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent
+           transition-shadow duration-150;
   }
+
+  /* ── Cards ───────────────────────────────────── */
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-100;
+    @apply bg-card text-card-foreground rounded-xl shadow-sm border border-border;
   }
+  .card-hover {
+    @apply card transition-all duration-200
+           hover:shadow-md hover:border-[hsl(var(--mustard-oil)/0.6)]
+           hover:-translate-y-0.5;
+  }
+
+  /* ── Badges ──────────────────────────────────── */
   .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
+  .badge-open    { @apply badge bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200; }
+  .badge-closed  { @apply badge bg-rose-100 text-rose-700 ring-1 ring-rose-200; }
+  .badge-pending { @apply badge bg-amber-100 text-amber-800; }
+  .badge-accepted { @apply badge bg-blue-100 text-blue-800; }
+  .badge-preparing { @apply badge bg-violet-100 text-violet-800; }
+  .badge-ready   { @apply badge bg-orange-100 text-orange-800; }
+  .badge-picked_up { @apply badge bg-cyan-100 text-cyan-800; }
+  .badge-delivered { @apply badge bg-emerald-100 text-emerald-700; }
+  .badge-cancelled { @apply badge bg-gray-100 text-gray-600; }
+  .badge-rejected { @apply badge bg-red-100 text-red-700; }
+
+  /* ── Quantity stepper ────────────────────────── */
+  .qty-stepper {
+    @apply inline-flex items-center rounded-lg border border-border bg-card
+           shadow-sm overflow-hidden;
+  }
+  .qty-btn {
+    @apply h-8 w-8 flex items-center justify-center text-accent font-bold
+           transition-colors disabled:opacity-40 disabled:cursor-not-allowed
+           hover:bg-muted/60 active:bg-muted;
+  }
+  .qty-count {
+    @apply min-w-[2rem] h-8 px-1.5 text-sm font-semibold text-foreground
+           flex items-center justify-center border-x border-border;
+  }
+
+  /* ── Brand hero ──────────────────────────────── */
+  .brand-hero {
+    background:
+      linear-gradient(135deg,
+        hsl(var(--red-chicory))   0%,
+        hsl(var(--buffalo-sauce)) 100%);
+    @apply text-primary-foreground;
+  }
+
+  /* ── Stat card ───────────────────────────────── */
+  .stat-card {
+    @apply card p-5 flex flex-col gap-1 relative overflow-hidden;
+  }
+  .stat-card::before {
+    content: '';
+    @apply absolute inset-x-0 top-0 h-[3px] rounded-t-xl;
+  }
+  .stat-card.chicory::before  { background: hsl(var(--red-chicory)); }
+  .stat-card.sauce::before    { background: hsl(var(--buffalo-sauce)); }
+  .stat-card.mustard::before  { background: hsl(var(--mustard-oil)); }
+  .stat-card.emerald::before  { background: #10b981; }
+
+  /* ── Section label ───────────────────────────── */
+  .section-label {
+    @apply text-xs font-semibold uppercase tracking-widest
+           text-[hsl(var(--red-chicory))] mb-4;
+  }
+
+  /* ── Divider with text ───────────────────────── */
+  .divider-label {
+    @apply flex items-center gap-3 text-xs font-semibold uppercase tracking-widest
+           text-muted-foreground my-2;
+  }
+  .divider-label::before, .divider-label::after {
+    content: '';
+    @apply flex-1 border-t border-border;
+  }
+}
+
+/* ── Auth page animations ───────────────────────── */
+@keyframes float-a {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-18px) rotate(6deg); }
+}
+@keyframes float-b {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-12px) rotate(-4deg); }
+}
+@keyframes float-c {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(-22px) scale(1.05); }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes spin-rev {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+@keyframes btn-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes check-pop {
+  0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+  60%  { transform: scale(1.2) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.auth-float-a { animation: float-a 5s ease-in-out infinite; }
+.auth-float-b { animation: float-b 6.5s ease-in-out infinite 0.8s; }
+.auth-float-c { animation: float-c 7s ease-in-out infinite 1.4s; }
+.spin-slow    { animation: spin-slow 18s linear infinite; }
+.spin-rev     { animation: spin-rev 12s linear infinite; }
+.slide-down   { animation: slide-down 0.3s ease-out both; }
+.check-pop    { animation: check-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* Shimmer button */
+.btn-shimmer {
+  background: linear-gradient(
+    105deg,
+    hsl(var(--red-chicory)) 0%,
+    hsl(var(--buffalo-sauce)) 40%,
+    hsl(var(--mustard-oil) / 0.8) 60%,
+    hsl(var(--buffalo-sauce)) 70%,
+    hsl(var(--red-chicory)) 100%
+  );
+  background-size: 200% auto;
+  animation: btn-shimmer 2.5s linear infinite;
+}
+
+/* Focus-ring input variant */
+.auth-input {
+  @apply w-full h-12 px-4 bg-white border-2 border-border rounded-xl text-sm
+         text-foreground placeholder:text-muted-foreground/60
+         transition-all duration-200 outline-none
+         focus:border-[hsl(var(--buffalo-sauce))]
+         focus:shadow-[0_0_0_4px_hsl(var(--buffalo-sauce)/0.12)];
+}
+.auth-input.has-icon { @apply pl-11; }
+
+@layer utilities {
+  .font-display {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+  .text-chicory  { color: hsl(var(--red-chicory)); }
+  .text-mustard  { color: hsl(var(--mustard-oil)); }
+  .text-sauce    { color: hsl(var(--buffalo-sauce)); }
+  .bg-chicory    { background: hsl(var(--red-chicory)); }
+  .bg-mustard    { background: hsl(var(--mustard-oil)); }
+  .bg-sauce      { background: hsl(var(--buffalo-sauce)); }
+  .bg-beige      { background: hsl(var(--breezy-beige)); }
+  .border-chicory { border-color: hsl(var(--red-chicory)); }
+  .border-mustard { border-color: hsl(var(--mustard-oil)); }
+  .border-sauce   { border-color: hsl(var(--buffalo-sauce)); }
 }

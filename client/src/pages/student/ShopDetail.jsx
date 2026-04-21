@@ -1,19 +1,37 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import {
+  ChevronLeft, MapPin, Star, Clock, Plus, Minus,
+  PackageX, ShoppingCart, MessageSquare,
+} from 'lucide-react';
 import api from '../../api/axios';
 import Spinner from '../../components/Spinner';
 import { useCart } from '../../context/CartContext';
+import useScrollReveal from '../../hooks/useScrollReveal';
+import { Button } from '../../components/ui/button';
+
+function StarRow({ rating, count }) {
+  return (
+    <span className="flex items-center gap-1 text-sm text-amber-500 font-medium">
+      {'★'.repeat(Math.round(rating))}
+      <span className="text-muted-foreground font-normal text-xs ml-1">
+        {Number(rating).toFixed(1)} ({count} reviews)
+      </span>
+    </span>
+  );
+}
 
 export default function ShopDetail() {
-  const { id } = useParams();
+  const pageRef = useRef(null);
+  const { id }  = useParams();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
-  const [shop, setShop] = useState(null);
+  const { addToCart, updateItem, getItemQuantity } = useCart();
+  const [shop, setShop]         = useState(null);
   const [products, setProducts] = useState([]);
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [adding, setAdding] = useState(null);
-  const [msg, setMsg] = useState('');
+  const [reviews, setReviews]   = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [actingProduct, setActingProduct] = useState(null);
+  const [msg, setMsg] = useState({ text: '', ok: true });
 
   useEffect(() => {
     Promise.all([
@@ -25,17 +43,20 @@ export default function ShopDetail() {
     }).finally(() => setLoading(false));
   }, [id]);
 
-  const handleAdd = async productId => {
-    setAdding(productId);
-    setMsg('');
+  useScrollReveal(pageRef);
+
+  const changeQuantity = async (productId, delta) => {
+    const currentQty = getItemQuantity(productId);
+    const nextQty = Math.max(0, currentQty + delta);
+    setActingProduct(productId);
+    setMsg({ text: '', ok: true });
     try {
-      await addToCart(productId, 1);
-      setMsg('Added to cart!');
-      setTimeout(() => setMsg(''), 2000);
+      if (currentQty === 0 && nextQty > 0) await addToCart(productId, nextQty);
+      else await updateItem(productId, nextQty);
     } catch (err) {
-      setMsg(err.response?.data?.message || 'Error adding to cart');
+      setMsg({ text: err.response?.data?.message || 'Error adding to cart', ok: false });
     } finally {
-      setAdding(null);
+      setActingProduct(null);
     }
   };
 
@@ -45,90 +66,151 @@ export default function ShopDetail() {
   }, {});
 
   if (loading) return <Spinner />;
-  if (!shop) return <p className="text-center py-12 text-gray-500">Shop not found.</p>;
+  if (!shop) return <p className="text-center py-16 text-muted-foreground">Shop not found.</p>;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <button onClick={() => navigate(-1)} className="text-sm text-orange-600 mb-4 hover:underline flex items-center gap-1">
-        ← Back
+    <div ref={pageRef} className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+      {/* Back */}
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-[hsl(var(--buffalo-sauce))] transition-colors mb-6"
+      >
+        <ChevronLeft size={16} strokeWidth={2} /> Back to shops
       </button>
 
-      <div className="card p-6 mb-6 border-l-4 border-orange-500">
-        <div className="flex justify-between items-start">
+      {/* Shop header */}
+      <div className="card p-6 mb-6 border-l-4 border-[hsl(var(--buffalo-sauce))]" data-reveal>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">{shop.name}</h1>
-            <p className="text-gray-500 mt-1">{shop.description}</p>
-            {shop.location && <p className="text-sm text-gray-400 mt-1">📍 {shop.location}</p>}
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-[hsl(var(--red-chicory))] mb-1">
+              {shop.name}
+            </h1>
+            {shop.description && (
+              <p className="text-muted-foreground text-sm leading-relaxed mb-3 max-w-xl">{shop.description}</p>
+            )}
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              {shop.location && (
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <MapPin size={13} strokeWidth={2} />{shop.location}
+                </span>
+              )}
+              {shop.totalReviews > 0 && <StarRow rating={shop.rating} count={shop.totalReviews} />}
+            </div>
           </div>
-          <span className={`badge ${shop.isOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+          <span className={`${shop.isOpen ? 'badge-open' : 'badge-closed'} self-start shrink-0`}>
             {shop.isOpen ? 'Open' : 'Closed'}
           </span>
         </div>
-        {shop.totalReviews > 0 && (
-          <p className="text-yellow-500 mt-2 text-sm">{'★'.repeat(Math.round(shop.rating))} {Number(shop.rating).toFixed(1)} ({shop.totalReviews} reviews)</p>
-        )}
       </div>
 
-      {msg && (
-        <div className={`text-sm px-4 py-2 rounded-lg mb-4 ${
-          msg === 'Added to cart!'
-            ? 'bg-green-50 text-green-700 border border-green-200'
+      {/* Alert message */}
+      {msg.text && (
+        <div className={`flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl mb-4 ${
+          msg.ok
+            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
             : 'bg-red-50 text-red-700 border border-red-200'
         }`}>
-          {msg}
+          {msg.text}
         </div>
       )}
 
+      {/* Products */}
       {products.length === 0 ? (
-        <p className="text-gray-400 text-center py-8">No products listed yet.</p>
+        <div className="text-center py-16">
+          <PackageX size={40} className="mx-auto mb-4 text-muted-foreground/40" strokeWidth={1.5} />
+          <p className="text-muted-foreground">No products listed yet.</p>
+        </div>
       ) : (
         Object.entries(byCategory).map(([cat, items]) => (
-          <div key={cat} className="mb-6">
-            <h2 className="font-semibold text-orange-600 text-xs uppercase tracking-widest mb-3 flex items-center gap-2">
-              <span className="flex-1 border-t border-orange-100" />
-              {cat}
-              <span className="flex-1 border-t border-orange-100" />
-            </h2>
-            <div className="space-y-3">
-              {items.map(p => (
-                <div key={p._id} className="card p-4 flex justify-between items-center hover:shadow-md transition-shadow">
-                  <div>
-                    <p className="font-medium text-gray-800">{p.name}</p>
-                    {p.description && <p className="text-sm text-gray-500">{p.description}</p>}
-                    <p className="text-xs text-gray-400 mt-0.5">⏱ ~{p.preparationTime} min</p>
+          <div key={cat} className="mb-8" data-reveal>
+            <div className="divider-label mb-4">{cat}</div>
+            <div className="space-y-2.5">
+              {items.map(p => {
+                const qty = getItemQuantity(p._id);
+                const busy = actingProduct === p._id;
+                return (
+                  <div
+                    key={p._id}
+                    className="card flex items-center justify-between gap-4 p-4 hover:shadow-card-md transition-shadow"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-card-foreground">{p.name}</p>
+                      {p.description && (
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{p.description}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                        <Clock size={10} strokeWidth={2} /> ~{p.preparationTime} min
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="font-bold text-sm text-card-foreground">₹{p.price}</span>
+                      {p.isAvailable ? (
+                        qty > 0 ? (
+                          <div className="qty-stepper">
+                            <button
+                              onClick={() => changeQuantity(p._id, -1)}
+                              disabled={busy || !shop.isOpen}
+                              className="qty-btn"
+                              aria-label={`Decrease ${p.name}`}
+                            >
+                              <Minus size={12} strokeWidth={2.5} />
+                            </button>
+                            <span className="qty-count">{qty}</span>
+                            <button
+                              onClick={() => changeQuantity(p._id, 1)}
+                              disabled={busy || !shop.isOpen}
+                              className="qty-btn"
+                              aria-label={`Increase ${p.name}`}
+                            >
+                              <Plus size={12} strokeWidth={2.5} />
+                            </button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => changeQuantity(p._id, 1)}
+                            disabled={busy || !shop.isOpen}
+                            className="h-8 px-3 gap-1.5 text-xs border-[hsl(var(--buffalo-sauce))] text-[hsl(var(--buffalo-sauce))] hover:bg-[hsl(var(--buffalo-sauce))] hover:text-white"
+                          >
+                            <Plus size={12} strokeWidth={2.5} />
+                            {busy ? '…' : 'Add'}
+                          </Button>
+                        )
+                      ) : (
+                        <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-lg">
+                          Unavailable
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4 ml-4">
-                    <p className="font-bold text-gray-800">₹{p.price}</p>
-                    {p.isAvailable ? (
-                      <button
-                        onClick={() => handleAdd(p._id)}
-                        disabled={adding === p._id || !shop.isOpen}
-                        className="btn-primary text-sm py-1.5 px-3"
-                      >
-                        {adding === p._id ? '…' : '+ Add'}
-                      </button>
-                    ) : (
-                      <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-lg">Unavailable</span>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ))
       )}
 
+      {/* Reviews */}
       {reviews.length > 0 && (
-        <div className="mt-8">
-          <h2 className="font-semibold text-gray-700 mb-3">Reviews</h2>
+        <div className="mt-10" data-reveal>
+          <div className="flex items-center gap-2 mb-4">
+            <MessageSquare size={16} className="text-[hsl(var(--red-chicory))]" strokeWidth={2} />
+            <h2 className="font-display font-bold text-lg text-[hsl(var(--red-chicory))]">Reviews</h2>
+            <span className="badge badge-pending ml-1">{reviews.length}</span>
+          </div>
           <div className="space-y-3">
             {reviews.map(r => (
               <div key={r._id} className="card p-4">
-                <div className="flex justify-between mb-1">
-                  <span className="font-medium text-sm text-gray-700">{r.student?.name}</span>
-                  <span className="text-yellow-500">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</span>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-medium text-sm text-card-foreground">{r.student?.name}</span>
+                  <span className="text-amber-500 text-sm">
+                    {'★'.repeat(r.rating)}
+                    <span className="text-muted-foreground">{'☆'.repeat(5 - r.rating)}</span>
+                  </span>
                 </div>
-                {r.comment && <p className="text-sm text-gray-500">{r.comment}</p>}
+                {r.comment && <p className="text-sm text-muted-foreground leading-relaxed">{r.comment}</p>}
               </div>
             ))}
           </div>

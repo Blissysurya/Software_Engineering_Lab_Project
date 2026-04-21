@@ -37,7 +37,7 @@ function RoleHome() {
 
 function AppRoutes() {
   return (
-    <>
+    <div className="min-h-screen">
       <Navbar />
       <Routes>
         <Route path="/" element={<RoleHome />} />
@@ -72,7 +72,7 @@ function AppRoutes() {
           </div>
         } />
       </Routes>
-    </>
+    </div>
   );
 }
 

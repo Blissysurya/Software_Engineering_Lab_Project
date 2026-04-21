@@ -1,21 +1,48 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { Package, Users, Store, TrendingUp, LayoutDashboard } from 'lucide-react';
 import api from '../../api/axios';
 import Spinner from '../../components/Spinner';
+import useScrollReveal from '../../hooks/useScrollReveal';
 
-const STATUS_COLORS = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  accepted: 'bg-blue-100 text-blue-800',
-  rejected: 'bg-red-100 text-red-800',
-  preparing: 'bg-purple-100 text-purple-800',
-  ready: 'bg-orange-100 text-orange-800',
-  picked_up: 'bg-cyan-100 text-cyan-800',
-  delivered: 'bg-green-100 text-green-800',
-  cancelled: 'bg-gray-100 text-gray-600',
+const STATUS_BADGE = {
+  pending:   'badge-pending',
+  accepted:  'badge-accepted',
+  rejected:  'badge-rejected',
+  preparing: 'badge-preparing',
+  ready:     'badge-ready',
+  picked_up: 'badge-picked_up',
+  delivered: 'badge-delivered',
+  cancelled: 'badge-cancelled',
 };
 
+function StatCard({ label, value, icon: Icon, accent }) {
+  const borders = {
+    sauce:   'border-t-[hsl(var(--buffalo-sauce))]',
+    chicory: 'border-t-[hsl(var(--red-chicory))]',
+    emerald: 'border-t-emerald-500',
+    mustard: 'border-t-[hsl(var(--mustard-oil))]',
+  };
+  const texts = {
+    sauce:   'text-[hsl(var(--buffalo-sauce))]',
+    chicory: 'text-[hsl(var(--red-chicory))]',
+    emerald: 'text-emerald-600',
+    mustard: 'text-[hsl(var(--mustard-oil)/0.75)]',
+  };
+  return (
+    <div className={`card p-5 border-t-4 ${borders[accent]}`}>
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+        <Icon size={16} className="text-muted-foreground/60" strokeWidth={2} />
+      </div>
+      <p className={`text-2xl font-display font-bold ${texts[accent]}`}>{value}</p>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
-  const [stats, setStats] = useState(null);
+  const pageRef = useRef(null);
+  const [stats, setStats]   = useState(null);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,70 +52,90 @@ export default function AdminDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
+  useScrollReveal(pageRef);
+
   if (loading) return <Spinner />;
 
-  return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Admin Dashboard</h1>
+  const quickLinks = [
+    { to: '/admin/shops', label: 'Manage Shops', desc: 'Approve or suspend vendor shops', icon: Store },
+    { to: '/admin/users', label: 'Manage Users', desc: 'View and toggle user accounts', icon: Users },
+  ];
 
+  return (
+    <div ref={pageRef} className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+
+      {/* Page title */}
+      <div className="flex items-center gap-3 mb-8" data-reveal>
+        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[hsl(var(--red-chicory)/0.1)]">
+          <LayoutDashboard size={20} className="text-[hsl(var(--red-chicory))]" strokeWidth={2} />
+        </div>
+        <div>
+          <h1 className="font-display text-2xl font-bold text-[hsl(var(--red-chicory))]">Admin Dashboard</h1>
+          <p className="text-muted-foreground text-xs mt-0.5">Platform overview &amp; controls</p>
+        </div>
+      </div>
+
+      {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: 'Total Orders', value: stats.totalOrders, color: 'text-orange-600', bg: 'bg-orange-50', icon: '📦' },
-            { label: 'Total Users', value: stats.totalUsers, color: 'text-blue-600', bg: 'bg-blue-50', icon: '👥' },
-            { label: 'Active Shops', value: stats.totalShops, color: 'text-green-600', bg: 'bg-green-50', icon: '🏪' },
-            { label: 'Revenue', value: `₹${stats.revenue.toLocaleString()}`, color: 'text-yellow-600', bg: 'bg-yellow-50', icon: '💰' },
-          ].map(s => (
-            <div key={s.label} className={`card p-4 text-center ${s.bg}`}>
-              <p className="text-2xl mb-1">{s.icon}</p>
-              <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-              <p className="text-xs text-gray-500 mt-1">{s.label}</p>
-            </div>
-          ))}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8" data-reveal>
+          <StatCard label="Total Orders" value={stats.totalOrders} icon={Package} accent="sauce" />
+          <StatCard label="Total Users"  value={stats.totalUsers}  icon={Users}   accent="chicory" />
+          <StatCard label="Active Shops" value={stats.totalShops}  icon={Store}   accent="emerald" />
+          <StatCard label="Revenue"      value={`₹${stats.revenue?.toLocaleString()}`} icon={TrendingUp} accent="mustard" />
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-        {[
-          { to: '/admin/shops', label: 'Manage Shops', desc: 'Approve or suspend shops', icon: '🏪' },
-          { to: '/admin/users', label: 'Manage Users', desc: 'View and toggle user accounts', icon: '👥' },
-        ].map(l => (
-          <Link key={l.to} to={l.to} className="card p-5 hover:shadow-md hover:border-orange-200 transition-all group">
-            <p className="text-3xl mb-2">{l.icon}</p>
-            <p className="font-semibold text-gray-800 group-hover:text-orange-600 transition-colors">{l.label}</p>
-            <p className="text-sm text-gray-500 mt-1">{l.desc}</p>
+      {/* Quick links */}
+      <p className="section-label" data-reveal>Management</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10" data-reveal>
+        {quickLinks.map(({ to, label, desc, icon: Icon }) => (
+          <Link
+            key={to}
+            to={to}
+            className="card p-5 flex items-start gap-4 hover:shadow-card-md hover:-translate-y-0.5 transition-all duration-200 group"
+          >
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[hsl(var(--red-chicory)/0.08)] shrink-0 group-hover:bg-[hsl(var(--red-chicory)/0.15)] transition-colors">
+              <Icon size={18} className="text-[hsl(var(--red-chicory))]" strokeWidth={2} />
+            </div>
+            <div>
+              <p className="font-semibold text-card-foreground group-hover:text-[hsl(var(--buffalo-sauce))] transition-colors">{label}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+            </div>
           </Link>
         ))}
       </div>
 
-      <h2 className="font-semibold text-gray-700 mb-3">Recent Orders</h2>
-      <div className="card overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-orange-50 text-gray-500 text-xs uppercase">
-            <tr>
-              <th className="text-left px-4 py-3">Student</th>
-              <th className="text-left px-4 py-3">Shop</th>
-              <th className="text-left px-4 py-3">Amount</th>
-              <th className="text-left px-4 py-3">Status</th>
-              <th className="text-left px-4 py-3">Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map(o => (
-              <tr key={o._id} className="border-t border-gray-100 hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium">{o.student?.name || '—'}</td>
-                <td className="px-4 py-3 text-gray-600">{o.shop?.name || '—'}</td>
-                <td className="px-4 py-3 font-semibold text-gray-800">₹{o.totalAmount}</td>
-                <td className="px-4 py-3">
-                  <span className={`badge ${STATUS_COLORS[o.status] || 'bg-gray-100 text-gray-600'}`}>
-                    {o.status.replace('_', ' ')}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-gray-400">{new Date(o.createdAt).toLocaleDateString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Recent orders */}
+      <div data-reveal>
+        <p className="section-label">Recent Orders</p>
+        <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-[hsl(var(--breezy-beige))] text-muted-foreground text-xs uppercase">
+                <tr>
+                  {['Student', 'Shop', 'Amount', 'Status', 'Date'].map(h => (
+                    <th key={h} className="text-left px-4 py-3 font-semibold tracking-wide">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((o, i) => (
+                  <tr key={o._id} className={`border-t border-border/60 hover:bg-muted/20 transition-colors ${i % 2 === 0 ? '' : 'bg-muted/10'}`}>
+                    <td className="px-4 py-3 font-medium text-card-foreground">{o.student?.name || '—'}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{o.shop?.name || '—'}</td>
+                    <td className="px-4 py-3 font-semibold text-card-foreground">₹{o.totalAmount}</td>
+                    <td className="px-4 py-3">
+                      <span className={STATUS_BADGE[o.status] || 'badge'}>
+                        {o.status.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">{new Date(o.createdAt).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );
